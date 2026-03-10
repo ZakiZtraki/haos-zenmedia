@@ -1,0 +1,25 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the WNSM Data Store service
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+# ==============================================================================
+
+bashio::log.info "Starting WNSM Data Store..."
+
+# Validate required config
+if ! bashio::config.has_value 'username'; then
+    bashio::log.fatal "No username configured. Please set your Wiener Netze account username."
+    exit 1
+fi
+
+if ! bashio::config.has_value 'password'; then
+    bashio::log.fatal "No password configured. Please set your Wiener Netze account password."
+    exit 1
+fi
+
+USERNAME=$(bashio::config 'username')
+PORT=$(bashio::config 'api_port')
+bashio::log.info "Username: ${USERNAME}"
+bashio::log.info "API will listen on port: ${PORT}"
+
+exec python3 /usr/bin/wnsm_store/main.py

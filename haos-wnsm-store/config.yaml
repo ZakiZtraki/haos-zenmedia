@@ -1,0 +1,35 @@
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
+name: WNSM Data Store
+version: "1.0.0"
+slug: haos-wnsm-store
+description: >
+  Fetches Wiener Netze Smart Meter (WNSM) 15-minute consumption data and stores
+  it in a local SQLite database. Exposes a REST API so Home Assistant sensors
+  can query historical consumption data for use with variable energy pricing
+  (e.g. Nordpool / aWATTar integration).
+url: "https://github.com/home-assistant/addons-example"
+arch:
+  - aarch64
+  - amd64
+init: false
+map:
+  - data:rw
+ports:
+  8099/tcp: 8099
+ports_description:
+  8099/tcp: "WNSM REST API"
+options:
+  username: ""
+  password: ""
+  zaehlpunkte: []
+  update_hour: 4
+  history_days: 730
+  api_port: 8099
+schema:
+  username: str
+  password: str
+  zaehlpunkte:
+    - str?
+  update_hour: int(0,23)
+  history_days: int(30,1095)
+  api_port: int(1024,65535)

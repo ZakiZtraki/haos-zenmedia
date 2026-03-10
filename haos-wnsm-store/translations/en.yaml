@@ -1,0 +1,28 @@
+configuration:
+  username:
+    name: Username
+    description: Your Wiener Netze online account username (email).
+  password:
+    name: Password
+    description: Your Wiener Netze online account password.
+  zaehlpunkte:
+    name: Meter Points
+    description: >
+      List of Zaehlpunkt IDs to monitor (e.g. AT0030000000000000000000012345678).
+      Leave empty to automatically fetch all meter points from your account.
+  update_hour:
+    name: Daily Update Hour
+    description: >
+      Hour of day (0-23) when the daily data fetch runs. WNSM data is only
+      updated once per day, so a value between 3 and 6 is recommended to
+      ensure yesterday's data is available.
+  history_days:
+    name: History Days
+    description: >
+      How many days of historical consumption data to fetch on the first run.
+      Maximum 1095 (3 years). Note: large values may take several minutes.
+  api_port:
+    name: API Port
+    description: >
+      Local HTTP port for the REST API (default 8099). Home Assistant REST
+      sensors use this port to query stored consumption data.

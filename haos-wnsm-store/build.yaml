@@ -1,0 +1,10 @@
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
+build_from:
+  aarch64: "ghcr.io/home-assistant/aarch64-base:3.17"
+  amd64: "ghcr.io/home-assistant/amd64-base:3.17"
+labels:
+  org.opencontainers.image.title: "Home Assistant Add-on: WNSM Data Store"
+  org.opencontainers.image.description: >
+    Stores Wiener Netze Smart Meter 15-min consumption data for cost calculation
+    with variable energy pricing integrations.
+  org.opencontainers.image.licenses: "Apache License 2.0"
