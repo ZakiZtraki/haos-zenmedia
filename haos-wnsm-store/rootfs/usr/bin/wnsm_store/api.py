@@ -12,6 +12,7 @@ from db import (
     get_latest_record,
     get_zaehlpunkte_list,
 )
+from ha_statistics import push_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ def create_app(db, scheduler, options: dict) -> web.Application:
     app.router.add_get("/zaehlpunkte", zaehlpunkte_handler)
     app.router.add_post("/fetch/trigger", fetch_trigger_handler)
     app.router.add_get("/fetch/status", fetch_status_handler)
+    app.router.add_post("/statistics/push", statistics_push_handler)
 
     return app
 
@@ -142,3 +144,26 @@ async def fetch_status_handler(request: web.Request) -> web.Response:
     if last is None:
         return web.json_response({"status": "never_fetched"})
     return web.json_response(last)
+
+
+async def statistics_push_handler(request: web.Request) -> web.Response:
+    """Manually push all historical data as HA long-term statistics.
+
+    Connects to the HA WebSocket API and calls recorder/import_statistics for
+    each zaehlpunkt. Useful for backfilling after first install or to force a
+    refresh of the Energy Dashboard data.
+
+    Returns: {status, results: {zaehlpunkt -> hours_pushed}}
+    """
+    db = request.app["db"]
+    options = request.app["options"]
+    results = await push_statistics(db, options)
+    total_hours = sum(results.values())
+    return web.json_response(
+        {
+            "status": "ok",
+            "zaehlpunkte_count": len(results),
+            "total_hours_pushed": total_hours,
+            "results": results,
+        }
+    )

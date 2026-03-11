@@ -26,42 +26,4 @@ profile haos-wnsm-store flags=(attach_disconnected,mediate_deleted) {
 
   # Access to options.json and other files within your addon
   /data/** rw,
-
-  # Python runtime
-  /usr/lib/python3*/** r,
-  /usr/local/lib/python3*/** r,
-
-  # Network access for WNSM API calls (managed by kernel, no explicit AppArmor rule needed)
-
-  # Start new profile for the Python service
-  /usr/bin/python3* cx -> wnsm_store,
-
-  profile wnsm_store flags=(attach_disconnected,mediate_deleted) {
-    #include <abstractions/base>
-    #include <abstractions/nameservice>
-
-    # Receive signals from S6-Overlay
-    signal (receive) peer=*_haos-wnsm-store,
-
-    # Access to addon data (SQLite DB, options.json)
-    /data/** rw,
-
-    # Python and libraries
-    /usr/bin/python3* r,
-    /usr/lib/python3*/** r,
-    /usr/local/lib/python3*/** r,
-    /usr/bin/wnsm_store/** r,
-
-    # Network
-    network tcp,
-    network udp,
-
-    # System files
-    /etc/passwd r,
-    /etc/resolv.conf r,
-    /etc/ssl/** r,
-    /dev/tty rw,
-    /dev/urandom r,
-    /proc/sys/kernel/random/uuid r,
-  }
 }

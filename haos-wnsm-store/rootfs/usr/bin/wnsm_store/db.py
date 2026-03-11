@@ -178,3 +178,36 @@ async def get_zaehlpunkte_list(db: aiosqlite.Connection) -> list:
     ) as cursor:
         rows = await cursor.fetchall()
     return [r["zaehlpunkt"] for r in rows]
+
+
+async def get_hourly_aggregated(db: aiosqlite.Connection, zaehlpunkt: str) -> list:
+    """Return hourly aggregated consumption for a zaehlpunkt, ordered ASC.
+
+    Each entry: {hour_start: ISO8601 UTC str, kwh: float, cumsum: float}
+    where cumsum is the running total from the first ever recorded interval.
+    """
+    from datetime import datetime, timezone
+
+    async with db.execute(
+        "SELECT interval_start, kwh FROM consumption WHERE zaehlpunkt = ? ORDER BY interval_start ASC",
+        (zaehlpunkt,),
+    ) as cursor:
+        rows = await cursor.fetchall()
+
+    hourly: dict = {}
+    for row in rows:
+        ts = datetime.fromisoformat(row["interval_start"])
+        hour_utc = ts.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        hourly[hour_utc] = hourly.get(hour_utc, 0.0) + row["kwh"]
+
+    result = []
+    cumsum = 0.0
+    for hour in sorted(hourly):
+        kwh = hourly[hour]
+        cumsum += kwh
+        result.append({
+            "hour_start": hour.isoformat(),
+            "kwh": round(kwh, 6),
+            "cumsum": round(cumsum, 6),
+        })
+    return result

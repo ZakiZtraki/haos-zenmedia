@@ -7,6 +7,7 @@ import aiosqlite
 
 from db import has_any_data
 from fetcher import fetch_consumption
+from ha_statistics import push_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,12 +27,21 @@ class Scheduler:
         return self._is_fetching
 
     async def maybe_initial_fetch(self):
-        """Trigger an initial history fetch if the database is empty."""
+        """Trigger an initial history fetch if the database is empty.
+
+        If data already exists, skip the fetch but still push statistics to HA
+        so that historical data is visible in the Energy Dashboard immediately.
+        """
         if not await has_any_data(self.db):
             _LOGGER.info("Database is empty — triggering initial history fetch ...")
-            await self.trigger_fetch()
+            await self.trigger_fetch()  # trigger_fetch also calls push_statistics
         else:
             _LOGGER.info("Database already contains data, skipping initial fetch.")
+            _LOGGER.info("Pushing existing data as HA statistics ...")
+            try:
+                await push_statistics(self.db, self.options)
+            except Exception as exc:
+                _LOGGER.error("Statistics push on startup failed: %s", exc)
 
     async def trigger_fetch(self) -> dict:
         """Trigger a data fetch immediately (thread-safe). Returns a status dict."""
@@ -43,11 +53,19 @@ class Scheduler:
             self._is_fetching = True
             try:
                 count = await fetch_consumption(self.db, self.options)
-                return {"status": "ok", "records_added": count}
+                fetch_result = {"status": "ok", "records_added": count}
             except Exception as exc:
                 return {"status": "error", "message": str(exc)}
             finally:
                 self._is_fetching = False
+
+        # Push updated statistics after a successful fetch (non-critical)
+        try:
+            await push_statistics(self.db, self.options)
+        except Exception as exc:
+            _LOGGER.error("Statistics push after fetch failed: %s", exc)
+
+        return fetch_result
 
     async def run(self):
         """Scheduler loop: fires once daily at the configured update_hour."""
